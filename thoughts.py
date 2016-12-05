@@ -45,6 +45,15 @@ def create_deck():
                              for rank in ['A', 2, 3, 4, 5, 6, 7, 8, 9, 10, 'J', 'Q', 'K']]
 
 
+# The following functions all take a number of Cards as a parameter.
+# The parameter names have meaning:
+#
+#   card    a Card
+#   cards   an iterable: any number of cards
+#   hand    an iterable: 5 distinct Cards
+#   deck    an iterable: 52 distinct Cards
+
+
 def shuffled(cards):
     return random.sample(cards, len(cards))
 
@@ -64,8 +73,13 @@ def high_card(cards, keyFn=aces_high):
 
 
 def group_by_rank(cards):
+    """
+    Sort cards into a list of sets, where each set contains all the
+    cards of a single rank.  Sort largest sets first; same-size sets
+    ordered by rank, highest first.
+    """
+
     def _importance(s):
-        """Largest groups first; same-size groups ordered by rank, highest first."""
         return (len(s), aces_high(s.copy().pop()))
 
     groups = defaultdict(set)
@@ -75,36 +89,50 @@ def group_by_rank(cards):
 
 
 def is_pair(cards):
+    # it's a pair if any group (we'll try the largest first)
+    # has two or more cards in it.
     return len(group_by_rank(cards)[0]) >= 2
 
 
 def is_two_pair(cards):
+    # It's two-pair if it's four-of-a-kind _or_ if there are at least
+    # two groups with at least two cards in each.
     groups = group_by_rank(cards)
     return len(groups[0])==4 or (len(groups)>=2 and len(groups[1])>=2)
 
 
 def is_three_of_a_kind(cards):
+    # It's three-of-a-kind if the largest group has at least 3 cards in it.
     return len(group_by_rank(cards)[0]) >= 3
 
 
 def is_straight(hand):
     def _is_straight(hand, keyFn):
+        # It's a straight if all five cards are different ranks and span
+        # the length of a straight (4 single-steps between the five cards).
         ranks = {keyFn(card) for card in hand}
         return len(ranks) == 5 and max(ranks)-min(ranks) == 4
 
+    # Check it it's a straight both ways: aces low, or aces high
     return _is_straight(hand, aces_low) or _is_straight(hand, aces_high)
 
 
 def is_flush(cards):
+    # It's a flush if the set of all the suits present contains only one
+    # suit.
     return len({card.suit for card in cards}) == 1
 
 
-def is_full_house(hand):
-    groups = group_by_rank(hand)
-    return len(groups) == 2 and len(groups[0]) == 3
+def is_full_house(cards):
+    # It's a full-house if there's a group of at least three and another
+    # group of at least two.
+    groups = group_by_rank(cards)
+    return len(groups)>=2 and len(groups[0])>=3 and len(groups[1])>=2
 
 
 def is_four_of_a_kind(cards):
+    # It's four-of-a-kind if the largest group contains all four cards
+    # of that rank.
     return len(group_by_rank(cards)[0]) == 4
 
 
@@ -117,13 +145,21 @@ def Card_to_str(card):
 
 
 def hand_to_str(hand):
-    key = aces_high
+    keyFn = aces_high
     if is_straight(hand) and not is_royal_straight(hand):
-        key = aces_low
-    return ", ".join([Card_to_str(card) for card in sorted(hand, key=key)])
+        keyFn = aces_low
+    return ", ".join([Card_to_str(card) for card in sorted(hand, key=keyFn)])
 
 
 def characterize_hand(hand):
+    """
+    Return a tuple whose first element is the PokerHands constant
+    identifying this hand, and whose remaining elements are tie-breakers
+    according to the type of hand.  The results are directly comparable.
+    E.g., if characterize_hand(h0) > characterize_hand(h1), then h0
+    beats h1 according to the rules of Poker.
+    """
+
     def _tie_breaker(hand):
         return tuple(aces_high(s.pop()) for s in group_by_rank(hand))
 
@@ -158,6 +194,11 @@ def characterize_hand(hand):
 
 
 def choose_best_hand(cards):
+    """
+    Return the best 5-card hand that can be made from the cards in cards.
+    Typically, len(cards)==7, but any number is allowed.
+    """
+
     best = None
     for hand in combinations(cards, 5):
         c = characterize_hand(hand)
