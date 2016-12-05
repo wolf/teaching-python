@@ -96,13 +96,42 @@ class TestThoughts(unittest.TestCase):
         self.assertFalse(is_flush(hand))
 
     def test_is_full_house(self):
-        pass
+        aces = {Card('A', suit) for suit in [Suits.SPADES, Suits.CLUBS, Suits.HEARTS]}
+        twos = {Card(2, suit) for suit in [Suits.CLUBS, Suits.HEARTS]}
+        hand = aces | twos
+        self.assertTrue(is_full_house(hand))
+        hand.remove(Card(2, Suits.HEARTS))
+        hand.add(Card(3, Suits.HEARTS))
+        self.assertFalse(is_full_house(hand))
 
     def test_is_four_of_a_kind(self):
-        pass
+        aces = {Card('A', suit) for suit in [Suits.SPADES, Suits.CLUBS, Suits.HEARTS]}
+        twos = {Card(2, suit) for suit in [Suits.CLUBS, Suits.HEARTS]}
+        hand = aces | twos
+        self.assertFalse(is_four_of_a_kind(hand))
+        hand.remove(Card(2, Suits.HEARTS))
+        hand.add(Card('A', Suits.DIAMONDS))
+        self.assertTrue(is_four_of_a_kind(hand))
     
     def test_is_royal_straight(self):
-        pass
+        hand = {Card(rank, Suits.CLUBS) for rank in ['A', 'K', 'Q', 'J', 10]}
+        self.assertTrue(is_royal_straight(hand))
+        hand.remove(Card(10, Suits.CLUBS))
+        hand.add(Card(10, Suits.DIAMONDS))
+        self.assertTrue(is_royal_straight(hand))
+        hand.remove(Card(10, Suits.DIAMONDS))
+        hand.add(Card(9, Suits.CLUBS))
+        self.assertFalse(is_royal_straight(hand))
+
+    def test_group_by_rank(self):
+        groups = group_by_rank(self.deck)
+        self.assertEqual(len(groups), 13)
+        self.assertEqual(len(groups[12]), 4)
+        self.assertEqual(groups[12].pop().rank, 2)
+        groups = group_by_rank(self.hand)
+        self.assertEqual(len(groups), 4)
+        self.assertEqual(len(groups[0]), 2)
+        self.assertEqual(groups[3].pop().rank, 2)
 
 if __name__ == "__main__":
     unittest.main()

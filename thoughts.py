@@ -10,8 +10,8 @@ class Suits(Enum):
     CLUBS = "\U00002663"
     DIAMONDS = "\U00002662"
 
-    def __str__(c):
-        return c.value
+    def __str__(e):
+        return e.value
 
 
 class PokerHands(IntEnum):
@@ -25,7 +25,7 @@ class PokerHands(IntEnum):
     TWO_PAIR = 2
     PAIR = 1
 
-    def __str__(c):
+    def __str__(e):
         return { PokerHands.ROYAL_FLUSH: "Royal Flush",
                  PokerHands.STRAIGHT_FLUSH: "Straight Flush",
                  PokerHands.FOUR_OF_A_KIND: "Four of a Kind",
@@ -34,7 +34,7 @@ class PokerHands(IntEnum):
                  PokerHands.STRAIGHT: "Straight",
                  PokerHands.THREE_OF_A_KIND: "Three of a Kind",
                  PokerHands.TWO_PAIR: "Two Pair",
-                 PokerHands.PAIR: "Pair" }[c]
+                 PokerHands.PAIR: "Pair" }[e]
 
 
 Card = namedtuple("Card", ["rank", "suit"])
