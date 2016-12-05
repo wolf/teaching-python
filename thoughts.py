@@ -166,7 +166,8 @@ def characterize_hand(hand):
     if is_royal_straight(hand) and is_flush(hand):
         result = (PokerHands.ROYAL_FLUSH,)
     elif is_straight(hand) and is_flush(hand):
-        tieBreaker = aces_low(high_card(hand))
+        keyFn = aces_low
+        tieBreaker = keyFn(high_card(hand, keyFn))
         result = (PokerHands.STRAIGHT_FLUSH, tieBreaker)
     elif is_four_of_a_kind(hand):
         tieBreaker = aces_high(group_by_rank(hand)[0].pop())
