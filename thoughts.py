@@ -168,13 +168,13 @@ def characterize_hand(hand):
     beats h1 according to the rules of Poker.
     """
 
-    def _tie_breaker(hand, groups):
+    def _tie_breaker(groups):
         return tuple(aces_high(s.pop()) for s in groups)
 
     groups = group_by_rank(hand)
 
     if len(groups)==5 and not is_straight(hand):
-        result = (0,) + _tie_breaker(hand, groups)
+        result = (0,) + _tie_breaker(groups)
     elif is_royal_straight(hand) and is_flush(hand):
         result = (PokerHands.ROYAL_FLUSH,)
     elif is_straight(hand) and is_flush(hand):
@@ -196,11 +196,11 @@ def characterize_hand(hand):
         tieBreaker = keyFn(high_card(hand, keyFn))
         result = (PokerHands.STRAIGHT, tieBreaker)
     elif is_three_of_a_kind(hand, groups):
-        result = (PokerHands.THREE_OF_A_KIND,) + _tie_breaker(hand, groups)
+        result = (PokerHands.THREE_OF_A_KIND,) + _tie_breaker(groups)
     elif is_two_pair(hand, groups):
-        result = (PokerHands.TWO_PAIR,) + _tie_breaker(hand, groups)
+        result = (PokerHands.TWO_PAIR,) + _tie_breaker(groups)
     elif is_pair(hand, groups):
-        result = (PokerHands.PAIR,) + _tie_breaker(hand, groups)
+        result = (PokerHands.PAIR,) + _tie_breaker(groups)
     return result
 
 
