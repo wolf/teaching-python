@@ -88,22 +88,27 @@ def group_by_rank(cards):
     return sorted(groups.values(), key=_importance, reverse=True)
 
 
-def is_pair(cards):
+def is_pair(cards, groups=None):
+    if groups is None:
+        groups = group_by_rank(cards)
     # it's a pair if any group (we'll try the largest first)
     # has two or more cards in it.
-    return len(group_by_rank(cards)[0]) >= 2
+    return len(groups[0]) >= 2
 
 
-def is_two_pair(cards):
+def is_two_pair(cards, groups=None):
+    if groups is None:
+        groups = group_by_rank(cards)
     # It's two-pair if it's four-of-a-kind _or_ if there are at least
     # two groups with at least two cards in each.
-    groups = group_by_rank(cards)
     return len(groups[0])==4 or (len(groups)>=2 and len(groups[1])>=2)
 
 
-def is_three_of_a_kind(cards):
+def is_three_of_a_kind(cards, groups=None):
+    if groups is None:
+        groups = group_by_rank(cards)
     # It's three-of-a-kind if the largest group has at least 3 cards in it.
-    return len(group_by_rank(cards)[0]) >= 3
+    return len(groups[0]) >= 3
 
 
 def is_straight(hand):
@@ -123,17 +128,20 @@ def is_flush(cards):
     return len({card.suit for card in cards}) == 1
 
 
-def is_full_house(cards):
+def is_full_house(cards, groups=None):
+    if groups is None:
+        groups = group_by_rank(cards)
     # It's a full-house if there's a group of at least three and another
     # group of at least two.
-    groups = group_by_rank(cards)
     return len(groups)>=2 and len(groups[0])>=3 and len(groups[1])>=2
 
 
-def is_four_of_a_kind(cards):
+def is_four_of_a_kind(cards, groups=None):
+    if groups is None:
+        groups = group_by_rank(cards)
     # It's four-of-a-kind if the largest group contains all four cards
     # of that rank.
-    return len(group_by_rank(cards)[0]) == 4
+    return len(groups[0]) == 4
 
 
 def is_royal_straight(hand):
@@ -160,20 +168,24 @@ def characterize_hand(hand):
     beats h1 according to the rules of Poker.
     """
 
-    def _tie_breaker(hand):
-        return tuple(aces_high(s.pop()) for s in group_by_rank(hand))
+    def _tie_breaker(hand, groups):
+        return tuple(aces_high(s.pop()) for s in groups)
 
-    if is_royal_straight(hand) and is_flush(hand):
+    groups = group_by_rank(hand)
+
+    if len(groups)==5 and not is_straight(hand):
+        result = (0,) + _tie_breaker(hand, groups)
+    elif is_royal_straight(hand) and is_flush(hand):
         result = (PokerHands.ROYAL_FLUSH,)
     elif is_straight(hand) and is_flush(hand):
         keyFn = aces_low
         tieBreaker = keyFn(high_card(hand, keyFn))
         result = (PokerHands.STRAIGHT_FLUSH, tieBreaker)
-    elif is_four_of_a_kind(hand):
-        tieBreaker = aces_high(group_by_rank(hand)[0].pop())
+    elif is_four_of_a_kind(hand, groups):
+        tieBreaker = aces_high(groups[0].pop())
         result = (PokerHands.FOUR_OF_A_KIND, tieBreaker)
-    elif is_full_house(hand):
-        tieBreaker = aces_high(group_by_rank(hand)[0].pop())
+    elif is_full_house(hand, groups):
+        tieBreaker = aces_high(groups[0].pop())
         result = (PokerHands.FULL_HOUSE, tieBreaker)
     elif is_flush(hand):
         keyFn = aces_high
@@ -183,14 +195,12 @@ def characterize_hand(hand):
         keyFn = aces_high if is_royal_straight(hand) else aces_low
         tieBreaker = keyFn(high_card(hand, keyFn))
         result = (PokerHands.STRAIGHT, tieBreaker)
-    elif is_three_of_a_kind(hand):
-        result = (PokerHands.THREE_OF_A_KIND,) + _tie_breaker(hand)
-    elif is_two_pair(hand):
-        result = (PokerHands.TWO_PAIR,) + _tie_breaker(hand)
-    elif is_pair(hand):
-        result = (PokerHands.PAIR,) + _tie_breaker(hand)
-    else:
-        result = (0,) + _tie_breaker(hand)
+    elif is_three_of_a_kind(hand, groups):
+        result = (PokerHands.THREE_OF_A_KIND,) + _tie_breaker(hand, groups)
+    elif is_two_pair(hand, groups):
+        result = (PokerHands.TWO_PAIR,) + _tie_breaker(hand, groups)
+    elif is_pair(hand, groups):
+        result = (PokerHands.PAIR,) + _tie_breaker(hand, groups)
     return result
 
 
@@ -206,4 +216,7 @@ def choose_best_hand(cards):
         if best is None or c > best:
             best = c
             best_hand = hand
+            # optimization
+            if best[0] == PokerHands.ROYAL_FLUSH:
+                break
     return best_hand
